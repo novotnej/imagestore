@@ -1,0 +1,28 @@
+{
+  "name": "rostenkowski/imagestore",
+  "type": "library",
+  "require": {
+    "php": ">=5.5.0",
+    "nette/application": "^2.2",
+    "nette/bootstrap": "^2.2",
+    "nette/di": "^2.2",
+    "nette/http": "^2.2",
+    "latte/latte": "^2.2",
+    "nette/utils": "^2.2"
+  },
+  "require-dev": {
+    "ext-tokenizer": "*",
+    "ext-json": "*",
+    "nette/tester": "^1.7"
+  },
+  "suggest": {
+    "ext-imagick": "to use rotate()"
+  },
+  "autoload": {
+    "psr-4": {
+      "Rostenkowski\\": [
+        "src"
+      ]
+    }
+  }
+}
