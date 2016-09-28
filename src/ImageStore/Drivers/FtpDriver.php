@@ -114,7 +114,7 @@ class FtpDriver extends CommonDriver implements DriverInterface
             $this->originalCache[$meta->getHash()] = Image::fromFile($this->publicDataUrl.$this->getPath($meta));
         }
 
-        return $this->originalCache[$meta->getHash()];
+        return clone $this->originalCache[$meta->getHash()];
     }
 
     private function curlGetResponseCode($url)
