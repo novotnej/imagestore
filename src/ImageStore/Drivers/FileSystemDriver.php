@@ -45,6 +45,11 @@ class FileSystemDriver extends CommonDriver implements DriverInterface
         return $this->dataPath.'/'.$dir.'/'.$hash.'.'.$this->getExtension($meta->getType());
     }
 
+    private function fetchOriginal(Meta $meta)
+    {
+
+    }
+
     public function fileExists(Meta $meta)
     {
         if (is_file($this->getServerPath($meta)));
