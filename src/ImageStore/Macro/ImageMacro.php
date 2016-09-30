@@ -7,6 +7,7 @@ use Latte\Compiler;
 use Latte\MacroNode;
 use Latte\Macros\MacroSet;
 use Latte\PhpWriter;
+use Rostenkowski\ImageStore\Requests\ImageRequest;
 
 /**
  * Latte template engine image macros
@@ -114,7 +115,12 @@ class ImageMacro extends MacroSet
 	 */
 	public function macroSrc(MacroNode $node, PhpWriter $writer)
 	{
-		return $writer->write('$imageRequest = Rostenkowski\ImageStore\Requests\ImageRequest::fromMacro(%node.word, %node.array?); ?> src="<?php echo %escape($__imagestore->link($imageRequest)); ?>"<?php ');
+		return $writer->write(
+		    '$imageRequest = Rostenkowski\ImageStore\Requests\ImageRequest::fromMacro(%node.word, %node.array?); ?> 
+		    src="<?php echo %escape($__imagestore->link($imageRequest)); ?>"
+		    <?php if ($imageRequest->getWidth()) { ?> width="<?php echo $imageRequest->getWidth(); ?>" <?php } ?>
+		    <?php if ($imageRequest->getHeight()) { ?> height="<?php echo $imageRequest->getHeight(); ?>" <?php } ?>
+		    <?php ');
 	}
 
 }

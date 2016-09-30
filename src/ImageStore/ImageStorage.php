@@ -74,6 +74,16 @@ class ImageStorage extends Object implements Storage
         }
 	}
 
+	public function getDriver()
+    {
+        return $this->driver;
+    }
+
+    public function getFallbackDriver()
+    {
+        return $this->fallbackDriver;
+    }
+
 
 	/**
 	 * Fetches the cached copy of an image by given request.

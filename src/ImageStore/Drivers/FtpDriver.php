@@ -61,9 +61,7 @@ class FtpDriver extends CommonDriver implements DriverInterface
             $hash = $meta->getHash();
             $dir1 = $hash[0].$hash[1];
             $dir2 = $hash[2].$hash[3];
-            @ftp_mkdir($this->getWriteStream(), $dir1);
             ftp_chdir($this->getWriteStream(), $dir1);
-            @ftp_mkdir($this->getWriteStream(), $dir2);
             ftp_chdir($this->getWriteStream(), $dir2);
 
             $imageString = $image->__toString();
@@ -79,13 +77,39 @@ class FtpDriver extends CommonDriver implements DriverInterface
         $meta->setStorageDriver($this->getStorageDriverName());
         $this->originalCache[$meta->getHash()] = $image;
 
+        $this->pregeneratePreviews($meta);
+
+    }
+
+    public function preGeneratePreviews(Meta $meta)
+    {
         if ($this->preCalculatePreviews) {
             foreach ($this->preCalculatePreviews as $preview) {
                 $request = new ImageRequest($meta, $preview);
-                $link = $this->link($request);
+                $link = $this->calculateLink($request);
+            }
+        }
+    }
+
+    public function preGenerateDirectories()
+    {
+        $numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+        $dirs = [];
+        foreach ($numbers as $number1) {
+            foreach ($numbers as $number2) {
+                $dirs[] = $number1.$number2;
             }
         }
 
+        foreach ($dirs as $dir) {
+            @ftp_mkdir($this->getWriteStream(), $this->serverDataPath.$dir);
+            @ftp_mkdir($this->getWriteStream(), $this->serverCachePath.$dir);
+            foreach ($dirs as $subDir) {
+                @ftp_mkdir($this->getWriteStream(), $this->serverDataPath.$dir.'/'.$subDir);
+                @ftp_mkdir($this->getWriteStream(), $this->serverCachePath.$dir.'/'.$subDir);
+                echo $dir.'/'.$subDir.'<br />';
+            }
+        }
     }
 
     private function getPath(Meta $meta, Request $request = null)
@@ -232,6 +256,16 @@ class FtpDriver extends CommonDriver implements DriverInterface
 
     public function link(Request $request)
     {
+        if (in_array($request->getDimensions(), $this->preCalculatePreviews) && !$request->getCrop() && !$request->getFlags()) {
+            $url = $this->publicCacheUrl.$this->getPath($request->getMeta(), $request);
+            return $url;
+        }
+
+        return $this->calculateLink($request);
+    }
+
+    public function calculateLink(Request $request)
+    {
         $meta = $request->getMeta();
         $url = $this->publicCacheUrl.$this->getPath($request->getMeta(), $request);
         if ($this->curlGetResponseCode($url) !== 200) {
@@ -245,9 +279,7 @@ class FtpDriver extends CommonDriver implements DriverInterface
             $dir1 = $hash[0].$hash[1];
             $dir2 = $hash[2].$hash[3];
             ftp_chdir($this->getWriteStream(), $this->serverCachePath);
-            @ftp_mkdir($this->getWriteStream(), $dir1);
             ftp_chdir($this->getWriteStream(), $dir1);
-            @ftp_mkdir($this->getWriteStream(), $dir2);
             ftp_chdir($this->getWriteStream(), $dir2);
 
             $imageString = $image->__toString();
