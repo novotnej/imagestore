@@ -1,7 +1,7 @@
 <?php
 namespace Rostenkowski\ImageStore\Drivers;
 
-use Nette\Utils\Image;
+use \Nette\Utils\Image;
 use \Rostenkowski\ImageStore\DriverInterface;
 use Rostenkowski\ImageStore\Exceptions\FtpLoginException;
 use Rostenkowski\ImageStore\Exceptions\UploaderException;
@@ -77,16 +77,17 @@ class FtpDriver extends CommonDriver implements DriverInterface
         $meta->setStorageDriver($this->getStorageDriverName());
         $this->originalCache[$meta->getHash()] = $image;
 
-        $this->pregeneratePreviews($meta);
+        $this->preGeneratePreviews($meta);
 
     }
 
     public function preGeneratePreviews(Meta $meta)
     {
         if ($this->preCalculatePreviews) {
+            echo $meta->getHash().PHP_EOL;
             foreach ($this->preCalculatePreviews as $preview) {
                 $request = new ImageRequest($meta, $preview);
-                $link = $this->calculateLink($request);
+                echo '-- '.$this->calculateLink($request).PHP_EOL;
             }
         }
     }
