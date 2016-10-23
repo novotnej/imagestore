@@ -47,7 +47,8 @@ class FileSystemDriver extends CommonDriver implements DriverInterface
 
     private function fetchOriginal(Meta $meta)
     {
-
+        $image = Image::fromFile($this->getServerPath($meta));
+        return $image;
     }
 
     public function fileExists(Meta $meta)
@@ -62,6 +63,45 @@ class FileSystemDriver extends CommonDriver implements DriverInterface
 
     public function link(Request $request)
     {
-        return 'FS R';
+        return $this->calculateLink($request);
+    }
+
+    private function getPath(Meta $meta, Request $request = null)
+    {
+        $hash = $meta->getHash();
+        $requestPart = null;
+        if ($request) {
+            $dimensions = $request->getDimensions();
+            $flags = $request->getFlags();
+            $crop = (int) $request->getCrop();
+            $requestPart = $dimensions.$flags.$crop;
+        }
+        return $this->getDirPath($meta).'/'.$hash.$requestPart.'.'.$this->getExtension($meta->getType());
+    }
+
+    private function getDirPath(Meta $meta)
+    {
+        $hash = $meta->getHash();
+        $dir = $hash[0].$hash[1].'/'.$hash[2].$hash[3];
+        return $dir;
+    }
+
+    public function calculateLink(Request $request)
+    {
+        $meta = $request->getMeta();
+        $path = $this->getPath($request->getMeta(), $request);
+        if (!is_file($this->cachePath.$path)) {
+            $original = $this->fetchOriginal($meta);
+            if ($request->getCrop()) {
+                $image = $this->crop($original, $request);
+            } else {
+                $image = $this->resize($original, $request);
+            }
+
+            @mkdir($this->cachePath.'/'.$this->getDirPath($meta), 0750, true);
+            $image->save($this->cachePath.'/'.$path);
+        }
+
+        return $this->wwwCachePath.$path;
     }
 }
