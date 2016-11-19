@@ -172,7 +172,7 @@ class ImageStorage extends Object implements Storage
         try {
             $this->driver->save($image, $meta);
         } catch (\Exception $e) {
-            if (!$this->fallbackDriver) {
+            if ($this->fallbackDriver) {
                 throw $e;
             }
             $this->fallbackDriver->save($image, $meta);
