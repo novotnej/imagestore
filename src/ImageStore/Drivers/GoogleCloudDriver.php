@@ -2,6 +2,8 @@
 namespace Rostenkowski\ImageStore\Drivers;
 
 use Google\Cloud\Storage\StorageClient;
+use Nette\Caching\Cache;
+use Nette\Caching\Storages\FileStorage;
 use \Nette\Utils\Image;
 use \Rostenkowski\ImageStore\DriverInterface;
 use Rostenkowski\ImageStore\Meta;
@@ -17,14 +19,20 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     private $storage;
     private $publicUrl;
     private $originalCache = [];
+    private $cache;
 
-    public function __construct($bucketName, $projectId, $configFile, $publicUrl = null, $preCalculatePreviews = [])
+    public function __construct($bucketName, $projectId, $configFile, $cachePath, $publicUrl = null, $preCalculatePreviews = [])
     {
         $this->bucketName = $bucketName;
         $this->projectId = $projectId;
         $this->publicUrl = $publicUrl;
         $this->configFile = $configFile;
         $this->preCalculatePreviews = $preCalculatePreviews;
+        if (!is_dir($cachePath)) {
+            @mkdir($cachePath, 0777, true);
+        }
+        $storage = new FileStorage($cachePath);
+        $this->cache = new Cache($storage);
     }
 
     private function getWriteStream()
@@ -55,6 +63,7 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
                 'name' => $this->getPath($meta),
                 'predefinedAcl' => 'publicRead'
             ]);
+            $this->cache->save($this->getPath($meta), 'known');
         }
         $meta->setStorageDriver($this->getStorageDriverName());
         $this->originalCache[$meta->getHash()] = $image;
@@ -85,12 +94,6 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
         return $hash.$requestPart.'.'.$this->getExtension($meta->getType());
     }
 
-    private function getServerPath(Meta $meta)
-    {
-        return $this->getPath($meta);
-    }
-
-
     private function fetchOriginal(Meta $meta)
     {
         if (!isset($this->originalCache[$meta->getHash()])) {
@@ -100,22 +103,16 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
         return clone $this->originalCache[$meta->getHash()];
     }
 
-    private function curlGetResponseCode($url)
-    {
-        $ch = curl_init($url);
-
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        return $code;
-    }
-
     public function fileExists(Meta $meta, Request $request = null)
     {
-        $objects = $this->getWriteStream()->objects(['prefix' => $this->getPath($meta, $request)]);
+        $path = $this->getPath($meta, $request);
+        $known = $this->cache->load($path);
+        if ($known === 'known') {
+            return true;
+        }
+        $objects = $this->getWriteStream()->objects(['prefix' => $path]);
         foreach ($objects as $object) {
+            $this->cache->save($path, 'known');
             return true;
         }
         return false;
@@ -142,7 +139,8 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     public function calculateLink(Request $request)
     {
         $meta = $request->getMeta();
-        $url = $this->getPublicUrl().$this->getPath($request->getMeta(), $request);
+        $path = $this->getPath($meta, $request);
+        $url = $this->getPublicUrl().$path;
         if (!$this->fileExists($meta, $request)) {
             $original = $this->fetchOriginal($meta);
             if ($request->getCrop()) {
@@ -157,9 +155,10 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
             rewind($fp);
 
             $this->getWriteStream()->upload($fp, [
-                'name' => $this->getPath($meta, $request),
+                'name' => $path,
                 'predefinedAcl' => 'publicRead'
             ]);
+            $this->cache->save($path, 'known');
         }
 
         return $url;
