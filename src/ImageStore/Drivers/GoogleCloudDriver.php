@@ -112,9 +112,13 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
         return $code;
     }
 
-    public function fileExists(Meta $meta)
+    public function fileExists(Meta $meta, Request $request = null)
     {
-        return $this->curlGetResponseCode($this->getPublicUrl().$this->getPath($meta) == 200);
+        $objects = $this->getWriteStream()->objects(['prefix' => $this->getPath($meta, $request)]);
+        foreach ($objects as $object) {
+            return true;
+        }
+        return false;
     }
 
     public function link(Request $request)
@@ -139,7 +143,7 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     {
         $meta = $request->getMeta();
         $url = $this->getPublicUrl().$this->getPath($request->getMeta(), $request);
-        if ($this->curlGetResponseCode($url) !== 200) {
+        if (!$this->fileExists($meta, $request)) {
             $original = $this->fetchOriginal($meta);
             if ($request->getCrop()) {
                 $image = $this->crop($original, $request);
