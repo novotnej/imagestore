@@ -15,12 +15,14 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     private $configFile;
     private $preCalculatePreviews = [];
     private $storage;
+    private $publicUrl;
     private $originalCache = [];
 
-    public function __construct($bucketName, $projectId, $configFile, $preCalculatePreviews = [])
+    public function __construct($bucketName, $projectId, $configFile, $publicUrl = null, $preCalculatePreviews = [])
     {
         $this->bucketName = $bucketName;
         $this->projectId = $projectId;
+        $this->publicUrl = $publicUrl;
         $this->configFile = $configFile;
         $this->preCalculatePreviews = $preCalculatePreviews;
     }
@@ -127,6 +129,9 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
 
     private function getPublicUrl()
     {
+        if ($this->publicUrl) {
+            return $this->publicUrl.'/';
+        }
         return 'https://storage.googleapis.com/'.$this->bucketName.'/';
     }
 
