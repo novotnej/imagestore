@@ -1,6 +1,7 @@
 <?php
 namespace Rostenkowski\ImageStore\Drivers;
 
+use App\Repositories\ImagesRepository;
 use Google\Cloud\Storage\StorageClient;
 use Nette\Caching\Cache;
 use Nette\Caching\Storages\FileStorage;
@@ -19,20 +20,16 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     private $storage;
     private $publicUrl;
     private $originalCache = [];
-    private $cache;
+    private $imagesRepository;
 
-    public function __construct($bucketName, $projectId, $configFile, $cachePath, $publicUrl = null, $preCalculatePreviews = [])
+    public function __construct($bucketName, $projectId, $configFile, ImagesRepository $imagesRepository, $publicUrl = null, $preCalculatePreviews = [])
     {
         $this->bucketName = $bucketName;
         $this->projectId = $projectId;
         $this->publicUrl = $publicUrl;
         $this->configFile = $configFile;
         $this->preCalculatePreviews = $preCalculatePreviews;
-        if (!is_dir($cachePath)) {
-            @mkdir($cachePath, 0777, true);
-        }
-        $storage = new FileStorage($cachePath);
-        $this->cache = new Cache($storage);
+        $this->imagesRepository = $imagesRepository;
     }
 
     private function getWriteStream()
@@ -63,7 +60,8 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
                 'name' => $this->getPath($meta),
                 'predefinedAcl' => 'publicRead'
             ]);
-            $this->cache->save($this->getPath($meta), 'known');
+            $path = $this->getPath($meta);
+            $meta->knownUrls[$path] = $path;
         }
         $meta->setStorageDriver($this->getStorageDriverName());
         $this->originalCache[$meta->getHash()] = $image;
@@ -106,13 +104,14 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
     public function fileExists(Meta $meta, Request $request = null)
     {
         $path = $this->getPath($meta, $request);
-        $known = $this->cache->load($path);
-        if ($known === 'known') {
+        if (isset($meta->knownUrls[$path]) && $meta->knownUrls[$path] == 'known') {
             return true;
         }
+
         $objects = $this->getWriteStream()->objects(['prefix' => $path]);
         foreach ($objects as $object) {
-            $this->cache->save($path, 'known');
+            $meta->addKnownUrl($path);
+            $this->imagesRepository->persistAndFlush($meta);
             return true;
         }
         return false;
@@ -158,7 +157,8 @@ class GoogleCloudDriver extends CommonDriver implements DriverInterface
                 'name' => $path,
                 'predefinedAcl' => 'publicRead'
             ]);
-            $this->cache->save($path, 'known');
+            $meta->addKnownUrl($path);
+            $this->imagesRepository->persistAndFlush($meta);
         }
 
         return $url;

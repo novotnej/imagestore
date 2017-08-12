@@ -8,7 +8,6 @@ namespace Rostenkowski\ImageStore;
  */
 interface Meta
 {
-
 	/**
 	 * Returns the image SHA1 hash.
 	 *
