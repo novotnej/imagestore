@@ -1,14 +1,16 @@
 <?php
 namespace Rostenkowski\ImageStore\Drivers;
 
-use Nette\Object;
+use Nette\SmartObject;
 use \Nette\Utils\Image;
 use Rostenkowski\ImageStore\Exceptions\ImageTypeException;
 use Rostenkowski\ImageStore\Meta;
 use Rostenkowski\ImageStore\Request;
 
-class CommonDriver extends Object
+class CommonDriver
 {
+    use SmartObject;
+
     /**
      * The image type -> file extension map
      *
