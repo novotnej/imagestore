@@ -3,14 +3,15 @@
 namespace Rostenkowski\ImageStore\Directory;
 
 
-use Nette\Object;
+use Nette\SmartObject;
 use Rostenkowski\ImageStore\Exceptions\DirectoryException;
 
 /**
  * Directory wrapper
  */
-class Directory extends Object
+class Directory
 {
+    use SmartObject;
 
 	/**
 	 * @var string

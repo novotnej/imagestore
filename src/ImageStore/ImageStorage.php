@@ -6,7 +6,6 @@ namespace Rostenkowski\ImageStore;
 use Nette\Application\Responses\FileResponse;
 use Nette\DI\Container;
 use Nette\Http\FileUpload;
-use Nette\Object;
 use Nette\SmartObject;
 use Nette\Utils\Image;
 use Nette\Utils\Strings;

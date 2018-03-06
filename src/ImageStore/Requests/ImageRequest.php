@@ -3,7 +3,6 @@
 namespace Rostenkowski\ImageStore\Requests;
 
 
-use Nette\Object;
 use Nette\Utils\Image;
 use Rostenkowski\ImageStore\Entity\EmptyImage;
 use Rostenkowski\ImageStore\Meta;
