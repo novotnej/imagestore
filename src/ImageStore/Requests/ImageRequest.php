@@ -3,6 +3,7 @@
 namespace Rostenkowski\ImageStore\Requests;
 
 
+use Nette\SmartObject;
 use Nette\Utils\Image;
 use Rostenkowski\ImageStore\Entity\EmptyImage;
 use Rostenkowski\ImageStore\Meta;
@@ -11,8 +12,9 @@ use Rostenkowski\ImageStore\Request;
 /**
  * Image request encapsulation
  */
-class ImageRequest extends Object implements Request
+class ImageRequest implements Request
 {
+    use SmartObject;
 
     /**
      * The requested image meta information.
